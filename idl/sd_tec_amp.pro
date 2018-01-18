@@ -10,11 +10,11 @@ common amp_data_blk
 
 
 
-dateSel = [20110516, 20110516];
-timeRange = [ 0730,0900 ];
+dateSel = [20130214,20130214];[20130726, 20130726];[20110516, 20110516];
+timeRange = [0400, 0600];[0600, 0900];[ 0200,0400 ];[0730,0900]
 
 
-dt_skip_time=2.d ;;; we search data the grd file every 2 min
+dt_skip_time=5.d ;;; we search data the grd file every 2 min
 del_jul=dt_skip_time/1440.d ;;; This is the time step used to read the data --> Selected to be 60 min
 
 rad_fan_ids = [ 208, 209, 206, 207, 204, 205, 33, 32, 40 ]
@@ -181,10 +181,7 @@ for srch=0,nele_search-1 do begin
     polyfill,sym_xval,[sym_y_minval,aur_data.ae_index,sym_y_minval],color=get_gray()
 
 
-    kpi_plot_panel,date=dateCurrPlot,time=timeRange,pos=pos_omn_panel2,xticks= xticks_major_num,xminor= xminor_ticks_num,xstyle=1,xtickname=replicate(' ', 40),$
-            ytickname=replicate(' ', 40),yrange=[0,9],charsize=0.001,ystyle=1,$
-            yminor=3,linecolor=get_blue(),yticks=1,ytitle=' '
-
+    
     oplot,[juls_curr,juls_curr],[!y.crange[0],!y.crange[1]],linestyle=2,thick=3, color=get_black()
 
 ;---------------------------------------------------AUR/KP-----------------------------------------
