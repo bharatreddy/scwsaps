@@ -45,6 +45,38 @@ pro rti_panel, xmaps, ymaps, xmap, ymap                            $
     ,website = website
 
 common rad_data_blk
+common amp_data_blk
+
+
+date = 20110516
+timeRange = [ 0600, 1000 ]
+selTime = 0820
+rtiCoords = 'magn'
+selRad = 'cvw'
+selBeam = 7
+velScale = [ -500, 500 ]
+ampScale = [ -0.4, 0.4 ]
+ampCoords = 'mlt'
+coords=rtiCoords
+
+min_value = 0.1
+selMLT =22.
+scale=velScale
+beam=selBeam
+
+yrange=[50,65]
+
+rad_load_colortable,/website
+
+rad_fit_read, date, selRad, /filter
+
+
+
+time=timeRange
+
+charsize=1.
+SCATTERFLAG = 3
+
 
 ; get index for current data
 data_index = rad_fit_get_data_index()
@@ -86,9 +118,9 @@ if ~keyword_set(freq_band) then $
 if n_params() lt 4 then begin
 	if ~keyword_set(silent) and ~keyword_set(position) then $
 		prinfo, 'XMAPS, YMAPS, XMAP and YMAP not set, using default.'
-	xmaps = 1
-	ymaps = 1
-	xmap = 0
+	xmaps = 1.25
+	ymaps = 1.
+	xmap = 0.
 	ymap = 0
 endif
 if ~keyword_set(position) then $
@@ -179,6 +211,9 @@ if n_elements(min_power) eq 0 then $
 ; be before it really is a data gap.  Default to 5 minutes
 if ~keyword_set(max_gap) then $
 	max_gap = 2.5
+
+
+ps_open, '/home/bharatr/Docs/plots/sd-amp-rti-' + strtrim( string(date), 2) + '.ps'    
 
 ; set up coordinate system for plot
 plot, [0,0], /nodata, xstyle=5, ystyle=5, $
@@ -607,6 +642,98 @@ endif else begin
 		_yticklen = yticklen
 endelse
 
+
+
+
+    ;; AMPERE analysis
+amp_read, date
+
+load_usersym,/circle
+rad_load_colortable, /bluewhitered
+
+dt_skip_time=2.d ;;; we search data every 2 min
+del_jul=dt_skip_time/1440.d 
+
+
+sfjul, date, timeRange, sjul, fjul
+
+nele_search=((fjul-sjul)/del_jul)+1 
+
+for srch=0,nele_search-1 do begin
+
+    currJul=sjul+srch*del_jul
+
+    if strcmp(ampCoords,'mlt',/fold) then $
+        mlt0inmlonh = 0. $
+    else $
+        mlt0inmlonh = -mltdavit(year,(currJul-julday(1,1,year,0))*86400.d,0.)
+
+    ; int_hemi is 0 for north and 1 for south
+    int_hemi = 0
+    dd = min( abs( (*amp_data[int_hemi]).mjuls-currJul ), index)
+    nlats = (*amp_data[int_hemi]).nlat[index]
+    nlons = (*amp_data[int_hemi]).nlon[index]
+    mlats = 90.-reform((*amp_data[int_hemi]).colat[index, *])
+    mlts = ( reform((*amp_data[int_hemi]).mlt[index, *]) + mlt0inmlonh )*(strcmp(ampCoords,'mlt',/fold) ? 1. : 15.)
+    tmp = calc_stereo_coords(mlats, mlts, mlt=strcmp(ampCoords,'mlt',/fold))
+    xxs = fltarr(nlats, nlons+1)
+    yys = fltarr(nlats, nlons+1)
+    jrs = fltarr(nlats, nlons+1)
+    for a=0, nlats-1 do begin
+        for b=0, nlons do begin
+            xxs[a,b] = tmp[0,(b mod nlons)*nlats+a]
+            yys[a,b] = tmp[1,(b mod nlons)*nlats+a]
+            jrs[a,b] = abs((*amp_data[int_hemi]).jr[index,(b mod nlons)*nlats+a]) lt min_value ? 0. : (*amp_data[int_hemi]).jr[index,(b mod nlons)*nlats+a]
+        endfor
+    endfor
+
+
+    julVal = (*amp_data[int_hemi]).mjuls[index]
+    selMLTinds = where( mlts eq selMLT )
+    currMlats = mlats[selMLTinds]
+    currMlts = mlts[selMLTinds]
+    currJrs = jrs[selMLTinds]
+
+    lenCurrAmp = size(currJrs)
+
+    
+
+    julArr = dblarr( lenCurrAmp[1] ) + julVal
+    for ai=0,n_elements(currJrs)-1 do begin
+        ampCurrCol = get_color_index(currJrs[ai], param='power', scale=ampScale)
+        oplot, [julVal], [currMlats[ai]], psym=8,color=ampCurrCol
+    endfor
+
+endfor
+
+rad_load_colortable,/website
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ; "over"plot axis
 plot, [0,0], /nodata, position=position, $
 	charthick=charthick, charsize=charsize, $
@@ -618,4 +745,14 @@ plot, [0,0], /nodata, position=position, $
 	color=get_foreground(), title=title, $
 	xticklen=_xticklen, yticklen=_xticklen, $
 	xgridstyle=_gridstyle, ygridstyle=_gridstyle
+
+
+
+
+
+    plot_colorbar, 1.5, 1., 0.4, 0., scale=velScale, param='velocity', /with_info
+
+ps_close,/no_filename
+
 end
+
