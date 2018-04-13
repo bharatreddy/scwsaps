@@ -49,10 +49,12 @@ class sdvel_on_map(object):
                 channel = self.channel[i]
             else:
                 channel = self.channel
+            # print "rad---->", self.rads[i], self.rads
             f = pydarn.sdio.radDataOpen(self.stime, self.rads[i],
-                    self.etime,
+                    self.etime, filtered=False,
                     fileType=self.fileType,
                     channel=channel)
+            # print "f---------->", f
             if f is not None :
                 myPtrs.append(f)
             else:
@@ -163,9 +165,9 @@ class sdvel_on_map(object):
                        (myBeam.fit.slist[k] * myBeam.prm.rsep > srange_lim[1]): 
                         continue
 
-                    if (myBeam.fit.v[k] < vel_lim[0]) or\
-                       (myBeam.fit.v[k] > vel_lim[1]): 
-                        continue
+                    # if (myBeam.fit.v[k] < vel_lim[0]) or\
+                    #    (myBeam.fit.v[k] > vel_lim[1]): 
+                    #     continue
                     
                     r = myBeam.fit.slist[k]
                     if fill:
@@ -209,17 +211,17 @@ class sdvel_on_map(object):
                         inx = np.arange(len(verts))
                     else:
                         inx = np.where(np.array(gs_flg)==0)
-                        x = PolyCollection(np.array(verts)[np.where(np.array(gs_flg)==1)],
-                                           facecolors='.3',linewidths=0,
-                                           zorder=zorder+1,alpha=alpha)
-                        self.map_obj.ax.add_collection(x, autolim=True)
-                    # coll = PolyCollection(np.array(verts)[inx],
-                    #                    edgecolors='face',linewidths=0,
-                    #                    closed=False,zorder=zorder,
-                    #                    alpha=alpha, cmap=cmap,norm=norm)
-                    # #set color array to intensities
-                    # coll.set_array(np.array(intensities)[inx])
-                    # self.map_obj.ax.add_collection(coll, autolim=True)
+                        # x = PolyCollection(np.array(verts)[np.where(np.array(gs_flg)==1)],
+                        #                    facecolors='.3',linewidths=0,
+                        #                    zorder=zorder+1,alpha=alpha)
+                        # self.map_obj.ax.add_collection(x, autolim=True)
+                    coll = PolyCollection(np.array(verts)[inx],
+                                       edgecolors='face',linewidths=0,
+                                       closed=False,zorder=zorder,
+                                       alpha=alpha, cmap=cmap,norm=norm)
+                    #set color array to intensities
+                    coll.set_array(np.array(intensities)[inx])
+                    self.map_obj.ax.add_collection(coll, autolim=True)
 
             else:
                 #if we have data
